@@ -6,11 +6,13 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -27,12 +29,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -62,6 +61,9 @@ import com.example.schulte.model.SchulteRecord
 import com.example.schulte.util.formatLive
 import com.example.schulte.util.formatTime
 import com.example.schulte.util.SoundManager
+import com.example.schulte.ui.theme.InkGreen
+import com.example.schulte.ui.theme.WarmOrange
+import com.example.schulte.ui.theme.WarmOrangeSoft
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -197,17 +199,9 @@ private fun GameRound(
     val progress = if (finished) 1f else (solvedNumbers.size.toFloat() / cellCount)
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.40f),
-                        MaterialTheme.colorScheme.background,
-                    )
-                )
-            )
+        modifier = Modifier.fillMaxSize()
     ) {
+        AmbientBackground(modifier = Modifier.fillMaxSize()) {}
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -281,7 +275,7 @@ private fun GameRound(
                             text = formatLive(elapsed),
                             style = MaterialTheme.typography.displayLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = " 秒",
@@ -358,64 +352,88 @@ private fun GameRound(
             CountdownOverlay(countdownValue = countdownValue)
         }
 
-        // Result overlay
-        AnimatedVisibility(visible = finished, modifier = Modifier.align(Alignment.Center)) {
-            ResultCard(
-                mode = mode,
-                elapsedMs = finishedElapsed,
-                mistakes = mistakes,
-                isNewRecord = isNewRecord,
-                onRestart = onRestart,
-                onHome = onBack,
-            )
+        // Result overlay — full-screen container that vertically & horizontally centers
+        // the completion card over a soft scrim for a clean, focused finish.
+        AnimatedVisibility(visible = finished, modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                ResultCard(
+                    mode = mode,
+                    elapsedMs = finishedElapsed,
+                    mistakes = mistakes,
+                    isNewRecord = isNewRecord,
+                    onRestart = onRestart,
+                    onHome = onBack,
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun ReadySection(mode: GameMode, onStart: () -> Unit) {
-    Column(
+    FloatingCard(
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 34.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 20.dp, bottom = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = "🧠", style = MaterialTheme.typography.titleLarge)
-        }
-        Spacer(modifier = Modifier.height(18.dp))
-        Text(
-            text = "准备开始 · ${mode.title}",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "数字会在点击「开始训练」时随机生成\n避免在开始前记忆方格位置",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(
-            onClick = onStart,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp)
-                .padding(horizontal = 48.dp),
-            shape = RoundedCornerShape(18.dp),
-        ) {
-            Text(text = "开始训练", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .size(84.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(listOf(WarmOrangeSoft, WarmOrange))
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = "🧠", style = MaterialTheme.typography.titleLarge)
+            }
+            Spacer(modifier = Modifier.height(18.dp))
+            Text(
+                text = "准备开始 · ${mode.title}",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "点击「开始训练」后先进行 3 秒倒计时\n数字会在开始时随机生成，避免提前记忆",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(30.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.linearGradient(listOf(WarmOrangeSoft, WarmOrange))
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onStart,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "开始训练",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+            }
         }
     }
 }
@@ -427,29 +445,62 @@ private fun CountdownOverlay(countdownValue: Int) {
         scale.snapTo(0.5f)
         scale.animateTo(1f, spring(dampingRatio = 0.35f, stiffness = 600f))
     }
+    val numberBrush = Brush.verticalGradient(listOf(WarmOrangeSoft, WarmOrange))
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.45f)),
+            .background(
+                MaterialTheme.colorScheme.onBackground.copy(alpha = 0.32f)
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = if (countdownValue == 0) "开始！" else "$countdownValue",
-                fontSize = 112.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.graphicsLayer {
-                    scaleX = scale.value
-                    scaleY = scale.value
-                },
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "准备开始",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White.copy(alpha = 0.85f),
-            )
+            if (countdownValue > 0) {
+                Box(
+                    modifier = Modifier
+                        .size(150.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.10f))
+                        .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "$countdownValue",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        style = MaterialTheme.typography.displayLarge.copy(
+                            brush = numberBrush,
+                            fontSize = 96.sp,
+                        ),
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = scale.value
+                            scaleY = scale.value
+                        },
+                    )
+                }
+                Spacer(modifier = Modifier.height(18.dp))
+            }
+            if (countdownValue == 0) {
+                Text(
+                    text = "开始！",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        brush = numberBrush,
+                        fontSize = 72.sp,
+                    ),
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = scale.value
+                        scaleY = scale.value
+                    },
+                )
+            } else {
+                Text(
+                    text = "准备开始",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White.copy(alpha = 0.85f),
+                )
+            }
         }
     }
 }
@@ -491,9 +542,22 @@ private fun NumberCell(
     Box(
         modifier = modifier
             .offset(x = offsetX.value.dp)
-            .shadow(elevation = 2.dp, shape = shape)
+            .shadow(
+                elevation = 4.dp,
+                shape = shape,
+                ambientColor = Color.Black.copy(alpha = 0.05f),
+                spotColor = Color.Black.copy(alpha = 0.10f),
+            )
             .clip(shape)
             .background(background)
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color.White.copy(alpha = 0.20f), Color.Transparent),
+                    startY = 0f,
+                    endY = 0.45f,
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.6f), shape)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -518,9 +582,11 @@ private fun NextNumberBadge(
 ) {
     Row(
         modifier = modifier
-            .shadow(4.dp, RoundedCornerShape(50))
+            .shadow(6.dp, RoundedCornerShape(50), ambientColor = WarmOrange.copy(alpha = 0.35f))
             .clip(RoundedCornerShape(50))
-            .background(MaterialTheme.colorScheme.primary)
+            .background(
+                Brush.linearGradient(listOf(WarmOrangeSoft, WarmOrange))
+            )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -528,14 +594,15 @@ private fun NextNumberBadge(
         Text(
             text = if (finished) "完成" else "下一个",
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White.copy(alpha = 0.9f),
         )
         Spacer(modifier = Modifier.size(10.dp))
         Text(
             text = if (finished) "✔" else number.toString(),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimary,
+            color = Color.White,
         )
     }
 }
@@ -549,60 +616,81 @@ private fun ResultCard(
     onRestart: () -> Unit,
     onHome: () -> Unit,
 ) {
-    Column(
+    FloatingCard(
+        cornerRadius = 30.dp,
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp),
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 32.dp)
-            .shadow(20.dp, RoundedCornerShape(28.dp))
-            .clip(RoundedCornerShape(28.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 24.dp, vertical = 28.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .fillMaxSize()
+            .padding(horizontal = 32.dp),
     ) {
-        Text(
-            text = if (isNewRecord) "🎉 新纪录！" else "✅ 完成！",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = if (isNewRecord) MaterialTheme.colorScheme.secondary
-                    else MaterialTheme.colorScheme.primary,
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "${mode.title}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            ResultStat(label = "用时", value = formatTime(elapsedMs))
-            ResultStat(label = "错误", value = "$mistakes 次")
-        }
+            Text(
+                text = if (isNewRecord) "🎉 新纪录！" else "✅ 完成！",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isNewRecord) InkGreen
+                        else MaterialTheme.colorScheme.primary,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${mode.title}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(26.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            TextButton(
-                onClick = onHome,
-                modifier = Modifier.weight(1f).height(50.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Text("返回首页", fontWeight = FontWeight.SemiBold)
+                ResultStat(label = "用时", value = formatTime(elapsedMs))
+                ResultStat(label = "错误", value = "$mistakes 次")
             }
-            TextButton(
-                onClick = onRestart,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(50.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.primary),
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("再来一局", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onHome,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("返回首页", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            Brush.linearGradient(listOf(WarmOrangeSoft, WarmOrange))
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onRestart,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("再来一局", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }

@@ -2,33 +2,41 @@ package com.example.schulte.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Indigo = Color(0xFF5B5BD6)
-val IndigoLight = Color(0xFF7C7CEE)
-val IndigoDark = Color(0xFFB8B8FF)
-val PeriwinkleContainer = Color(0xFFE4E1FF)
-val PeriwinkleContainerDark = Color(0xFF3A3A55)
+// ---- Warm off-white / light-gray base (light) ----
+val WarmBase = Color(0xFFF5F1E8)
+val WarmBaseSoft = Color(0xFFEDE6DA)
+val FrostWhite = Color(0xFFFFFFFF)
+val FrostSurface = Color(0xFFFFFDF7)
 
-val Mint = Color(0xFF34C79B)
-val MintContainer = Color(0xFFD2F7EA)
-val MintContainerDark = Color(0xFF1F4B40)
+// ---- Warm orange gradient accent ----
+val WarmOrange = Color(0xFFFF7A3D)
+val WarmOrangeDeep = Color(0xFFF25A28)
+val WarmOrangeSoft = Color(0xFFFFB36B)
+val OrangeContainer = Color(0xFFFFE6D2)
+val OnOrangeContainer = Color(0xFF7A3210)
 
-val Coral = Color(0xFFFF6B6B)
-val CoralContainer = Color(0xFFFFE3E3)
-val CoralContainerDark = Color(0xFF5C3232)
+// ---- Deep ink-green accent ----
+val InkGreen = Color(0xFF26463A)
+val InkGreenDeep = Color(0xFF172B23)
+val InkGreenSoft = Color(0xFF45725F)
+val GreenContainer = Color(0xFFDCE9E1)
+val OnGreenContainer = Color(0xFF153128)
 
-val Amber = Color(0xFFFFB84D)
+// ---- Soft coral (wrong / error) ----
+val SoftCoral = Color(0xFFE2695A)
+val CoralContainer = Color(0xFFFDE7E2)
+val OnCoralContainer = Color(0xFF75271C)
 
-val ScreenBackgroundLight = Color(0xFFF6F6FF)
-val ScreenBackgroundDark = Color(0xFF101016)
+// ---- Neutrals ----
+val TextMuted = Color(0xFF7A7D73)
+val Hairline = Color(0xFFEAE2D3)
 
-val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceDark = Color(0xFF1A1A24)
-
-val CellLight = Color(0xFFFFFFFF)
-val CellDark = Color(0xFF23232F)
-
-val DividerLight = Color(0xFFE9E9F4)
-val DividerDark = Color(0xFF2C2C3A)
-
-val TextSecondaryLight = Color(0xFF5A5A6E)
-val TextSecondaryDark = Color(0xFF9B9BB0)
+// ---- Dark theme ----
+val DarkBase = Color(0xFF151917)
+val DarkSurface = Color(0xFF202624)
+val DarkSurfaceHigh = Color(0xFF2A312E)
+val DarkInk = Color(0xFFEDF0EA)
+val DarkMuted = Color(0xFF98A39A)
+val DarkHairline = Color(0xFF353C39)
+val DarkOrange = Color(0xFFFF9A5C)
+val DarkGreen = Color(0xFF7CA998)

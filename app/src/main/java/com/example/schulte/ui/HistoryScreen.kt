@@ -1,12 +1,11 @@
 package com.example.schulte.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,8 +21,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,11 +35,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.schulte.SchulteViewModel
 import com.example.schulte.model.GameMode
 import com.example.schulte.model.SchulteRecord
+import com.example.schulte.ui.theme.InkGreen
+import com.example.schulte.ui.theme.InkGreenSoft
+import com.example.schulte.ui.theme.WarmOrange
+import com.example.schulte.ui.theme.WarmOrangeSoft
 import com.example.schulte.util.formatTime
 import com.example.schulte.util.formatTimestamp
 
@@ -80,17 +82,8 @@ fun HistoryScreen(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.40f),
-                        MaterialTheme.colorScheme.background,
-                    )
-                )
-            )
+    AmbientBackground(
+        modifier = Modifier.fillMaxSize(),
     ) {
         Column(
             modifier = Modifier
@@ -98,7 +91,7 @@ fun HistoryScreen(
                 .safeDrawingPadding()
                 .padding(horizontal = 20.dp),
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // Top bar
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -112,6 +105,7 @@ fun HistoryScreen(
                     text = "历史记录",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 TextButton(onClick = {
@@ -126,41 +120,29 @@ fun HistoryScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // Filters: single row, horizontally scrollable so it always fits the screen width
+            // Filters: single horizontally-scrollable row of soft chips
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 ModeFilter.entries.forEach { f ->
-                    FilterChip(
+                    SoftChip(
+                        label = f.label,
                         selected = modeFilter == f,
                         onClick = { modeFilter = f },
-                        label = { Text(f.label, fontWeight = FontWeight.Medium) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
                     )
                 }
-                Spacer(modifier = Modifier.size(8.dp))
+                Spacer(modifier = Modifier.size(4.dp))
                 SortOrder.entries.forEach { s ->
-                    FilterChip(
+                    SoftChip(
+                        label = s.label,
                         selected = sortOrder == s,
                         onClick = { sortOrder = s },
-                        label = { Text(s.label, fontWeight = FontWeight.Medium) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            containerColor = MaterialTheme.colorScheme.surface,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
                     )
                 }
             }
@@ -175,7 +157,7 @@ fun HistoryScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(filtered, key = { it.timestamp }) { record ->
                         RecordRow(
@@ -191,7 +173,6 @@ fun HistoryScreen(
 }
 
 private fun rankOf(record: SchulteRecord, sortedList: List<SchulteRecord>): Int {
-    // Same-mode fastest rank among the currently displayed list
     val sameMode = sortedList.filter { it.mode == record.mode }
     val idx = sameMode.indexOfFirst { it.timestamp == record.timestamp }
     return if (idx >= 0) idx + 1 else 0
@@ -199,64 +180,68 @@ private fun rankOf(record: SchulteRecord, sortedList: List<SchulteRecord>): Int 
 
 @Composable
 private fun RecordRow(record: SchulteRecord, rank: Int) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(18.dp))
-            .clip(RoundedCornerShape(18.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val accent = if (record.mode == GameMode.FOUR) {
+        listOf(WarmOrangeSoft, WarmOrange)
+    } else {
+        listOf(InkGreenSoft, InkGreen)
+    }
+    val gradient = Brush.linearGradient(accent)
+
+    FloatingCard(
+        cornerRadius = 22.dp,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        // Mode badge
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(
-                    if (record.mode == GameMode.FOUR) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                    } else {
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f)
-                    }
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = if (record.mode == GameMode.FOUR) "4" else "5",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = if (record.mode == GameMode.FOUR) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.secondary
-                },
-            )
-        }
-
-        Spacer(modifier = Modifier.size(14.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = formatTime(record.elapsedMs),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                if (rank == 1) {
-                    Spacer(modifier = Modifier.size(6.dp))
-                    Text(
-                        text = "🏅",
-                        style = MaterialTheme.typography.bodyLarge,
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .shadow(
+                        elevation = 4.dp,
+                        shape = RoundedCornerShape(15.dp),
+                        clip = false,
+                        ambientColor = Color.Black.copy(alpha = 0.05f),
+                        spotColor = Color.Black.copy(alpha = 0.12f),
                     )
-                }
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(gradient),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = if (record.mode == GameMode.FOUR) "4" else "5",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
             }
-            Text(
-                text = "错误 ${record.mistakes} 次 · ${formatTimestamp(record.timestamp)}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+
+            Spacer(modifier = Modifier.size(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = formatTime(record.elapsedMs),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    if (rank == 1) {
+                        Text(
+                            text = "🏅",
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "错误 ${record.mistakes} 次 · ${formatTimestamp(record.timestamp)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
@@ -270,20 +255,24 @@ private fun EmptyState(hasAny: Boolean, modifier: Modifier = Modifier) {
     ) {
         Box(
             modifier = Modifier
-                .size(72.dp)
+                .size(76.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = "📝", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = "📝",
+                style = MaterialTheme.typography.titleLarge,
+            )
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = if (hasAny) "没有符合条件的记录" else "还没有训练记录",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
         )
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = "完成一局舒尔特方格后会自动保存在这里",
             style = MaterialTheme.typography.bodyMedium,

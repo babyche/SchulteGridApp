@@ -6,8 +6,15 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,7 +58,16 @@ private fun SchulteApp(viewModel: SchulteViewModel = viewModel()) {
 
     AnimatedContent(
         targetState = screen,
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        transitionSpec = {
+            (fadeIn(tween(480, easing = FastOutSlowInEasing)) +
+                    scaleIn(initialScale = 0.96f, animationSpec = spring(dampingRatio = 0.82f, stiffness = 300f)) +
+                    slideInVertically(animationSpec = tween(480, easing = FastOutSlowInEasing)) { it / 22 })
+                .togetherWith(
+                    fadeOut(tween(260)) +
+                            scaleOut(targetScale = 0.97f, animationSpec = tween(260))
+                )
+                .using(SizeTransform(clip = false))
+        },
         label = "screen",
     ) { current ->
         when (current) {
