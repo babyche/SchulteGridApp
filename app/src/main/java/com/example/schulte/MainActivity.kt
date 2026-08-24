@@ -27,6 +27,8 @@ import com.example.schulte.model.GameMode
 import com.example.schulte.ui.GameScreen
 import com.example.schulte.ui.HistoryScreen
 import com.example.schulte.ui.HomeScreen
+import com.example.schulte.ui.RecentDetailScreen
+import com.example.schulte.ui.TrendDetailScreen
 import com.example.schulte.ui.theme.SchulteTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +48,8 @@ private sealed interface Screen {
     data object Home : Screen
     data class Game(val mode: GameMode) : Screen
     data object History : Screen
+    data object Trend : Screen
+    data object Recent : Screen
 }
 
 @Composable
@@ -77,6 +81,8 @@ private fun SchulteApp(viewModel: SchulteViewModel = viewModel()) {
                 recordCount = viewModel.loadRecords().size,
                 onModeSelected = { mode -> screen = Screen.Game(mode) },
                 onOpenHistory = { screen = Screen.History },
+                onOpenTrend = { screen = Screen.Trend },
+                onOpenRecent = { screen = Screen.Recent },
             )
             is Screen.Game -> GameScreen(
                 mode = current.mode,
@@ -84,6 +90,14 @@ private fun SchulteApp(viewModel: SchulteViewModel = viewModel()) {
                 onBack = { screen = Screen.Home },
             )
             is Screen.History -> HistoryScreen(
+                viewModel = viewModel,
+                onBack = { screen = Screen.Home },
+            )
+            is Screen.Trend -> TrendDetailScreen(
+                viewModel = viewModel,
+                onBack = { screen = Screen.Home },
+            )
+            is Screen.Recent -> RecentDetailScreen(
                 viewModel = viewModel,
                 onBack = { screen = Screen.Home },
             )

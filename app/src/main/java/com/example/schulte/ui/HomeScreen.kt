@@ -1,5 +1,6 @@
 package com.example.schulte.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.schulte.model.GameMode
@@ -42,6 +46,8 @@ fun HomeScreen(
     recordCount: Int,
     onModeSelected: (GameMode) -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenTrend: () -> Unit,
+    onOpenRecent: () -> Unit,
 ) {
     AmbientBackground(
         modifier = Modifier.fillMaxSize(),
@@ -96,6 +102,33 @@ fun HomeScreen(
                     onClick = onOpenHistory,
                 )
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            SectionLabel(text = "训练趋势")
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            TrendEntryCard(
+                title = "最近用时",
+                subtitle = "最近 10 / 30 / 60 次用时变化",
+                gradient = listOf(WarmOrangeSoft, WarmOrange),
+                sparkLines = listOf(listOf(0.72f, 0.58f, 0.66f, 0.42f, 0.30f)),
+                onClick = onOpenRecent,
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            TrendEntryCard(
+                title = "训练趋势",
+                subtitle = "每日 / 每月平均耗时变化",
+                gradient = listOf(InkGreenSoft, InkGreen),
+                sparkLines = listOf(
+                    listOf(0.82f, 0.60f, 0.70f, 0.48f, 0.40f),
+                    listOf(0.92f, 0.74f, 0.64f, 0.58f, 0.50f),
+                ),
+                onClick = onOpenTrend,
+            )
 
             Spacer(modifier = Modifier.height(44.dp))
         }
@@ -380,6 +413,76 @@ private fun ChartBar(fraction: Float) {
             .clip(RoundedCornerShape(4.dp))
             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.55f))
     )
+}
+
+@Composable
+private fun TrendEntryCard(
+    title: String,
+    subtitle: String,
+    gradient: List<Color>,
+    sparkLines: List<List<Float>>,
+    onClick: () -> Unit,
+) {
+    val brush = Brush.linearGradient(gradient)
+    FloatingCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(18.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            RaisedTile(
+                cornerRadius = 18.dp,
+                background = brush,
+                modifier = Modifier.size(64.dp),
+            ) {
+                MiniSpark(lines = sparkLines)
+            }
+            Spacer(modifier = Modifier.size(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.size(10.dp))
+            ArrowPill(accent = brush, size = 32.dp)
+        }
+    }
+}
+
+@Composable
+private fun MiniSpark(lines: List<List<Float>>) {
+    Canvas(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(9.dp),
+    ) {
+        val strokeWidth = 2.dp.toPx()
+        val drawableW = size.width
+        val drawableH = size.height
+        lines.forEachIndexed { index, values ->
+            if (values.size < 2) return@forEachIndexed
+            val path = Path()
+            val step = drawableW / (values.size - 1)
+            path.moveTo(0f, drawableH * (1f - values.first()))
+            for (i in 1 until values.size) {
+                path.lineTo(i * step, drawableH * (1f - values[i]))
+            }
+            drawPath(
+                path = path,
+                color = Color.White.copy(alpha = if (index == 0) 0.95f else 0.55f),
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+        }
+    }
 }
 
 private fun minOfNotNull(a: Long?, b: Long?): Long? = when {

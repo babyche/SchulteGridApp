@@ -1,19 +1,27 @@
 package com.example.schulte.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -29,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +45,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.schulte.SchulteViewModel
 import com.example.schulte.model.GameMode
@@ -47,6 +60,8 @@ import com.example.schulte.ui.theme.WarmOrange
 import com.example.schulte.ui.theme.WarmOrangeSoft
 import com.example.schulte.util.formatTime
 import com.example.schulte.util.formatTimestamp
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 private enum class ModeFilter(val label: String) {
     ALL("全部"),
@@ -160,10 +175,17 @@ fun HistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(filtered, key = { it.timestamp }) { record ->
-                        RecordRow(
-                            record = record,
-                            rank = rankOf(record, filtered),
-                        )
+                        SwipeToDeleteRow(
+                            onDelete = {
+                                viewModel.deleteRecord(record.timestamp)
+                                refreshKey += 1
+                            },
+                        ) {
+                            RecordRow(
+                                record = record,
+                                rank = rankOf(record, filtered),
+                            )
+                        }
                     }
                     item { Spacer(modifier = Modifier.height(24.dp)) }
                 }
@@ -179,6 +201,82 @@ private fun rankOf(record: SchulteRecord, sortedList: List<SchulteRecord>): Int 
 }
 
 @Composable
+private fun SwipeToDeleteRow(
+    revealWidth: Dp = 84.dp,
+    onDelete: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val density = LocalDensity.current
+    val revealWidthPx = with(density) { revealWidth.toPx() }
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    var swiped by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        if (swiped) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize(),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(revealWidth)
+                        .align(Alignment.CenterEnd)
+                        .clip(RoundedCornerShape(topStart = 22.dp, bottomStart = 22.dp))
+                        .background(MaterialTheme.colorScheme.tertiary)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = onDelete,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "删除",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { scope.launch { offsetX.stop() } },
+                        onHorizontalDrag = { _, dragAmount ->
+                            val newValue = (offsetX.value + dragAmount).coerceIn(-revealWidthPx, 0f)
+                            scope.launch { offsetX.snapTo(newValue) }
+                            swiped = newValue < -revealWidthPx * 0.35f
+                        },
+                        onDragEnd = {
+                            val target = if (offsetX.value < -revealWidthPx * 0.5f) -revealWidthPx else 0f
+                            scope.launch {
+                                offsetX.animateTo(target, spring())
+                                swiped = target < 0f
+                            }
+                        },
+                        onDragCancel = {
+                            scope.launch {
+                                offsetX.animateTo(0f, spring())
+                                swiped = false
+                            }
+                        },
+                    )
+                },
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
 private fun RecordRow(record: SchulteRecord, rank: Int) {
     val accent = if (record.mode == GameMode.FOUR) {
         listOf(WarmOrangeSoft, WarmOrange)
@@ -190,6 +288,7 @@ private fun RecordRow(record: SchulteRecord, rank: Int) {
     FloatingCard(
         cornerRadius = 22.dp,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+        tint = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
