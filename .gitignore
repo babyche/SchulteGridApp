@@ -10,3 +10,6 @@ build/
 *.apk
 *.aab
 *.keystore
+*.jks
+/app/keystore/keystore-info.txt
+/app/release/
