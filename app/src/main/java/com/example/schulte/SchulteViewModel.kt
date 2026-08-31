@@ -85,6 +85,7 @@ class SchulteViewModel(application: Application) : AndroidViewModel(application)
         keyPattern = "yyyy-MM-dd",
         labelPattern = "M/d",
         lastBuckets = 30,
+        aggregate = ::averageMs,
     )
 
     /** Average elapsed time per month (last 12 months with records), split by mode. */
@@ -92,6 +93,23 @@ class SchulteViewModel(application: Application) : AndroidViewModel(application)
         keyPattern = "yyyy-MM",
         labelPattern = "yyyy-MM",
         lastBuckets = 12,
+        aggregate = ::averageMs,
+    )
+
+    /** Best elapsed time per training day (last 30 days with records), split by mode. */
+    fun dailyBestTrend(): List<TrendSlot> = buildTrend(
+        keyPattern = "yyyy-MM-dd",
+        labelPattern = "M/d",
+        lastBuckets = 30,
+        aggregate = ::bestMs,
+    )
+
+    /** Best elapsed time per month (last 12 months with records), split by mode. */
+    fun monthlyBestTrend(): List<TrendSlot> = buildTrend(
+        keyPattern = "yyyy-MM",
+        labelPattern = "yyyy-MM",
+        lastBuckets = 12,
+        aggregate = ::bestMs,
     )
 
     /**
@@ -106,8 +124,8 @@ class SchulteViewModel(application: Application) : AndroidViewModel(application)
         return sessions.mapIndexed { i, r ->
             TrendSlot(
                 label = "${i + 1}",
-                fourAvgMs = if (mode == GameMode.FOUR) r.elapsedMs else null,
-                fiveAvgMs = if (mode == GameMode.FIVE) r.elapsedMs else null,
+                fourMs = if (mode == GameMode.FOUR) r.elapsedMs else null,
+                fiveMs = if (mode == GameMode.FIVE) r.elapsedMs else null,
             )
         }
     }
@@ -134,7 +152,12 @@ class SchulteViewModel(application: Application) : AndroidViewModel(application)
         runCatching { backupFile.writeText(json) }
     }
 
-    private fun buildTrend(keyPattern: String, labelPattern: String, lastBuckets: Int): List<TrendSlot> {
+    private fun buildTrend(
+        keyPattern: String,
+        labelPattern: String,
+        lastBuckets: Int,
+        aggregate: (List<SchulteRecord>) -> Long,
+    ): List<TrendSlot> {
         val records = loadRecords()
         if (records.isEmpty()) return emptyList()
 
@@ -151,14 +174,17 @@ class SchulteViewModel(application: Application) : AndroidViewModel(application)
             val byMode = list.groupBy { it.mode }
             TrendSlot(
                 label = labelFormat.format(Date(list.first().timestamp)),
-                fourAvgMs = byMode[GameMode.FOUR]?.let { averageMs(it) },
-                fiveAvgMs = byMode[GameMode.FIVE]?.let { averageMs(it) },
+                fourMs = byMode[GameMode.FOUR]?.let(aggregate),
+                fiveMs = byMode[GameMode.FIVE]?.let(aggregate),
             )
         }
     }
 
     private fun averageMs(records: List<SchulteRecord>): Long =
         (records.sumOf { it.elapsedMs }.toDouble() / records.size).roundToLong()
+
+    private fun bestMs(records: List<SchulteRecord>): Long =
+        records.minOf { it.elapsedMs }
 
     private fun toJson(r: SchulteRecord): JSONObject = JSONObject().apply {
         put("mode", r.mode.name)

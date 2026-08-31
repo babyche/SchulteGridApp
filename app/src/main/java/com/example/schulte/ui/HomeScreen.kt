@@ -48,6 +48,7 @@ fun HomeScreen(
     onOpenHistory: () -> Unit,
     onOpenTrend: () -> Unit,
     onOpenRecent: () -> Unit,
+    onOpenImprovement: () -> Unit,
 ) {
     AmbientBackground(
         modifier = Modifier.fillMaxSize(),
@@ -128,6 +129,22 @@ fun HomeScreen(
                     listOf(0.92f, 0.74f, 0.64f, 0.58f, 0.50f),
                 ),
                 onClick = onOpenTrend,
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            TrendEntryCard(
+                title = "训练提升",
+                subtitle = "每日 / 每月最佳成绩变化",
+                gradient = listOf(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                ),
+                sparkLines = listOf(
+                    listOf(0.85f, 0.55f, 0.72f, 0.40f, 0.28f),
+                    listOf(0.95f, 0.70f, 0.60f, 0.50f, 0.38f),
+                ),
+                onClick = onOpenImprovement,
             )
 
             Spacer(modifier = Modifier.height(44.dp))

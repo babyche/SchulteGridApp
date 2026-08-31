@@ -90,7 +90,7 @@ fun TrendCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(16.dp))
-            if (slots.none { it.fourAvgMs != null || it.fiveAvgMs != null }) {
+            if (slots.none { it.fourMs != null || it.fiveMs != null }) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -111,8 +111,8 @@ fun TrendCard(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 ChartLegend(
-                    hasFour = slots.any { it.fourAvgMs != null },
-                    hasFive = slots.any { it.fiveAvgMs != null },
+                    hasFour = slots.any { it.fourMs != null },
+                    hasFive = slots.any { it.fiveMs != null },
                 )
             }
         }
@@ -190,7 +190,7 @@ private fun buildGeometry(slots: List<TrendSlot>, width: Float, height: Float, d
     val plotW = width - left - right
     val plotH = height - top - bottom
 
-    val values = slots.flatMap { listOfNotNull(it.fourAvgMs, it.fiveAvgMs) }
+    val values = slots.flatMap { listOfNotNull(it.fourMs, it.fiveMs) }
     var yMin = values.min().toFloat()
     var yMax = values.max().toFloat()
     if (yMin == yMax) {
@@ -208,11 +208,11 @@ private fun buildPoints(geo: ChartGeometry, slots: List<TrendSlot>, zoom: Float,
     val points = mutableListOf<SeriesPoint>()
     slots.forEachIndexed { i, slot ->
         val x = geo.left + (geo.xPos(i) - geo.left) * zoom + panX
-        if (slot.fourAvgMs != null) {
-            points.add(SeriesPoint(0, i, Offset(x, geo.yPos(slot.fourAvgMs.toFloat())), slot.fourAvgMs))
+        if (slot.fourMs != null) {
+            points.add(SeriesPoint(0, i, Offset(x, geo.yPos(slot.fourMs.toFloat())), slot.fourMs))
         }
-        if (slot.fiveAvgMs != null) {
-            points.add(SeriesPoint(1, i, Offset(x, geo.yPos(slot.fiveAvgMs.toFloat())), slot.fiveAvgMs))
+        if (slot.fiveMs != null) {
+            points.add(SeriesPoint(1, i, Offset(x, geo.yPos(slot.fiveMs.toFloat())), slot.fiveMs))
         }
     }
     return points
@@ -354,7 +354,7 @@ fun TrendChart(
             },
     ) {
         val geo = buildGeometry(slots, this.size.width, this.size.height, this)
-        val values = slots.flatMap { listOfNotNull(it.fourAvgMs, it.fiveAvgMs) }
+        val values = slots.flatMap { listOfNotNull(it.fourMs, it.fiveMs) }
         if (values.isEmpty()) return@Canvas
 
         fun xMapped(i: Int): Float = geo.left + (geo.xPos(i) - geo.left) * zoom + panX
@@ -464,8 +464,8 @@ fun TrendChart(
         }
 
         // Two series: 4×4 and 5×5
-        drawSeries(fourColor) { it.fourAvgMs }
-        drawSeries(fiveColor) { it.fiveAvgMs }
+        drawSeries(fourColor) { it.fourMs }
+        drawSeries(fiveColor) { it.fiveMs }
 
         // Dashed average line
         averageMs?.let { avg ->
@@ -485,7 +485,7 @@ fun TrendChart(
         // Selected point highlight + tooltip
         selected?.let { (series, index) ->
             val slot = slots.getOrNull(index) ?: return@let
-            val value = (if (series == 0) slot.fourAvgMs else slot.fiveAvgMs) ?: return@let
+            val value = (if (series == 0) slot.fourMs else slot.fiveMs) ?: return@let
             val center = Offset(xMapped(index), geo.yPos(value.toFloat()))
             val seriesColor = if (series == 0) fourColor else fiveColor
             drawCircle(Color.White.copy(alpha = 0.95f), radius = 7.dp.toPx(), center = center)
